@@ -41,34 +41,66 @@ def log_step(step: int, total: int, message: str):
     print(f"[{timestamp}] [STEP {step}/{total}] {message}")
 
 
-def click_element_by_selector(page: Page, selector: str, wait_time: int = 1000, timeout: int = 10000):
-    element = page.locator(selector)
-    element.wait_for(state="visible", timeout=timeout)
-    page.wait_for_timeout(wait_time)
-    element.click()
+def process_character(playwright, character_id: str, creator_code: str, index: int, total: int):
+    log_section(f"Character {index + 1}/{total}")
 
+    browser = playwright.chromium.launch(headless=True)
+    page = browser.new_page()
 
-def fill_input(page: Page, selector: str, value: str, timeout: int = 10000):
-    page.wait_for_selector(selector, state="visible", timeout=timeout)
-    page.fill(selector, value.strip())
+    result = {"claimed": False, "on_cooldown": False, "error": False}
 
+    try:
+        log_step(1, 5, "Loading shop page...")
+        page.goto("https://home.sfgame.net/en/shop/")
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(2000)
 
-def close_all_modals(page: Page):
-    page.evaluate("if(typeof closeLogin === 'function') closeLogin();")
-    page.evaluate("if(window.Alpine && Alpine.store('userOpen')) Alpine.store('userOpen').on = false;")
-    page.wait_for_timeout(1000)
+        cookie_button = page.locator("#didomi-notice-agree-button")
+        if cookie_button.count() > 0:
+            cookie_button.click()
+            page.wait_for_timeout(1000)
 
+        log_step(2, 5, "Opening login...")
+        page.evaluate("if(typeof openLogin === 'function') openLogin();")
+        page.wait_for_timeout(1000)
+        page.wait_for_selector("#characterid", state="visible", timeout=10000)
 
-def ensure_login_input_visible(page: Page):
-    char_input = page.locator("#characterid")
-    if char_input.is_visible():
-        return
+        log_step(3, 5, "Logging in...")
+        page.fill("#characterid", character_id.strip())
+        page.locator("button.btn-primary:has(span[x-text=\"$t('enter')\"])").click()
+        page.wait_for_timeout(3000)
+        log_success("Logged in successfully")
 
-    close_all_modals(page)
-    page.wait_for_timeout(500)
-    page.evaluate("if(typeof openLogin === 'function') openLogin();")
-    page.wait_for_timeout(1000)
-    page.wait_for_selector("#characterid", state="visible", timeout=10000)
+        log_step(4, 5, "Checking free gift...")
+        free_gift_button = page.locator("div[data-price='0'] button.btnCart:not([disabled])")
+
+        if free_gift_button.count() > 0:
+            log_info("Free gift available! Claiming...")
+            free_gift_button.click()
+            page.wait_for_timeout(2000)
+
+            log_step(5, 5, "Completing checkout...")
+            page.locator("button[x-on\\:click\\.prevent='open = ! open'].h-5.absolute.right-0.top-1.w-full").click()
+            page.wait_for_selector("#creatorcode", state="visible", timeout=5000)
+
+            page.fill("#creatorcode", creator_code)
+            page.locator("#btn-checkout").click()
+            page.wait_for_timeout(3000)
+
+            log_success("Free gift claimed!")
+            result["claimed"] = True
+        else:
+            log_warning("Free gift is on cooldown, skipping...")
+            result["on_cooldown"] = True
+
+    except Exception as e:
+        log_error(f"Failed: {e}")
+        result["error"] = True
+
+    finally:
+        browser.close()
+
+    return result
 
 
 def claim_free_gifts():
@@ -91,111 +123,21 @@ def claim_free_gifts():
     log_info(f"Found {len(character_ids)} character(s) to process")
     log_info(f"Creator code: {creator_code}")
 
-    stats = {"processed": 0, "claimed": 0, "on_cooldown": 0, "errors": 0}
+    stats = {"claimed": 0, "on_cooldown": 0, "errors": 0}
 
     with sync_playwright() as p:
-        log_info("Launching browser (headless mode)...")
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        for index, character_id in enumerate(character_ids):
+            result = process_character(p, character_id, creator_code, index, len(character_ids))
 
-        try:
-            log_info("Navigating to SFGame shop...")
-            page.goto("https://home.sfgame.net/en/shop/")
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(2000)
-            log_success("Shop page loaded")
-
-            log_info("Checking for cookie banner...")
-            cookie_button = page.locator("#didomi-notice-agree-button")
-            if cookie_button.count() > 0:
-                log_info("Accepting cookies...")
-                cookie_button.click()
-                page.wait_for_timeout(1000)
-                log_success("Cookies accepted")
-            else:
-                log_info("No cookie banner found")
-
-            for index, character_id in enumerate(character_ids):
-                log_section(f"Character {index + 1}/{len(character_ids)}")
-
-                try:
-                    log_step(1, 5, "Opening login modal...")
-                    ensure_login_input_visible(page)
-
-                    log_step(2, 5, "Entering character ID...")
-                    fill_input(page, "#characterid", character_id)
-
-                    log_step(3, 5, "Submitting login...")
-                    click_element_by_selector(page, "button.btn-primary:has(span[x-text=\"$t('enter')\"])")
-                    page.wait_for_timeout(3000)
-                    log_success("Logged in successfully")
-
-                    log_step(4, 5, "Checking free gift availability...")
-                    free_gift_button = page.locator("div[data-price='0'] button.btnCart:not([disabled])")
-
-                    if free_gift_button.count() > 0:
-                        log_info("Free gift available! Claiming...")
-                        click_element_by_selector(page, "div[data-price='0'] button.btnCart:not([disabled])")
-                        page.wait_for_timeout(2000)
-
-                        log_info("Opening creator code input...")
-                        click_element_by_selector(page, "button[x-on\\:click\\.prevent='open = ! open'].h-5.absolute.right-0.top-1.w-full")
-                        page.wait_for_selector("#creatorcode", state="visible", timeout=5000)
-
-                        log_info(f"Entering creator code: {creator_code}")
-                        fill_input(page, "#creatorcode", creator_code)
-
-                        log_info("Completing checkout...")
-                        click_element_by_selector(page, "#btn-checkout")
-                        page.wait_for_timeout(3000)
-
-                        log_success("Free gift claimed!")
-                        stats["claimed"] += 1
-                    else:
-                        log_warning("Free gift is on cooldown, skipping...")
-                        stats["on_cooldown"] += 1
-
-                    stats["processed"] += 1
-
-                    if index < len(character_ids) - 1:
-                        log_step(5, 5, "Switching to next character...")
-                        close_all_modals(page)
-
-                        page.evaluate("if(typeof openLogin === 'function') openLogin();")
-                        page.wait_for_timeout(1000)
-
-                        change_btn = page.locator("button.btnChangeCharacterId")
-                        if change_btn.count() > 0 and change_btn.is_visible():
-                            change_btn.click()
-                            page.wait_for_timeout(1000)
-
-                        page.wait_for_selector("#characterid", state="visible", timeout=10000)
-                        log_info("Ready for next character")
-
-                except Exception as e:
-                    log_error(f"Failed to process character: {e}")
-                    stats["errors"] += 1
-
-                    if index < len(character_ids) - 1:
-                        log_info("Attempting to recover for next character...")
-                        try:
-                            page.goto("https://home.sfgame.net/en/shop/")
-                            page.wait_for_load_state("networkidle")
-                            page.wait_for_timeout(2000)
-                        except:
-                            pass
-
-        except Exception as e:
-            log_error(f"Critical error: {e}")
-            stats["errors"] += 1
-
-        finally:
-            browser.close()
-            log_info("Browser closed")
+            if result["claimed"]:
+                stats["claimed"] += 1
+            elif result["on_cooldown"]:
+                stats["on_cooldown"] += 1
+            if result["error"]:
+                stats["errors"] += 1
 
     log_header("Summary")
     log_info(f"Total characters: {len(character_ids)}")
-    log_info(f"Processed:        {stats['processed']}")
     log_success(f"Gifts claimed:    {stats['claimed']}")
     log_warning(f"On cooldown:      {stats['on_cooldown']}")
     if stats["errors"] > 0:
