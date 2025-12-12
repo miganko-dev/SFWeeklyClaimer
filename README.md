@@ -68,12 +68,6 @@ playwright install chromium
 | `CHARACTER_IDS` | Yes | Comma-separated list of character IDs (e.g., `"id1#123,id2#456,id3#789"`) |
 | `CREATOR_CODES` | No | Comma-separated creator codes - picks random one per claim (default: `SFTOOLS`) |
 
-### Finding Your Character ID
-
-1. Go to [SFGame Shop](https://home.sfgame.net/en/shop/)
-2. Click "Login"
-3. Your Character ID is shown in your game profile (format: `xxxxxxxx#xxx`)
-
 ## Usage
 
 ### Local Development
