@@ -27,5 +27,5 @@ jobs:
       - name: Run claimer
         env:
           CHARACTER_IDS: ${{ secrets.CHARACTER_IDS }}
-          CREATOR_CODE: ${{ secrets.CREATOR_CODE }}
+          CREATOR_CODES: ${{ secrets.CREATOR_CODES }}
         run: python scripts/claimer.py

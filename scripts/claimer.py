@@ -1,5 +1,6 @@
 import os
 import sys
+import random
 from datetime import datetime
 from playwright.sync_api import sync_playwright, Page
 
@@ -103,12 +104,21 @@ def process_character(playwright, character_id: str, creator_code: str, index: i
     return result
 
 
+def get_random_creator_code():
+    codes_str = os.environ.get("CREATOR_CODES", "SFTOOLS")
+    codes = [code.strip().strip('"').strip("'") for code in codes_str.split(",") if code.strip()]
+    if not codes:
+        codes = ["SFTOOLS"]
+    return random.choice(codes)
+
+
 def claim_free_gifts():
     log_header("SFGame Free Gift Claimer")
     log_info(f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     character_ids_str = os.environ.get("CHARACTER_IDS", "")
-    creator_code = os.environ.get("CREATOR_CODE", "Niisa")
+    creator_codes_str = os.environ.get("CREATOR_CODES", "SFTOOLS")
+    creator_codes = [code.strip().strip('"').strip("'") for code in creator_codes_str.split(",") if code.strip()]
 
     if not character_ids_str:
         log_error("CHARACTER_IDS environment variable is not set")
@@ -121,12 +131,13 @@ def claim_free_gifts():
         sys.exit(1)
 
     log_info(f"Found {len(character_ids)} character(s) to process")
-    log_info(f"Creator code: {creator_code}")
+    log_info(f"Creator codes: {len(creator_codes)} configured")
 
     stats = {"claimed": 0, "on_cooldown": 0, "errors": 0}
 
     with sync_playwright() as p:
         for index, character_id in enumerate(character_ids):
+            creator_code = get_random_creator_code()
             result = process_character(p, character_id, creator_code, index, len(character_ids))
 
             if result["claimed"]:

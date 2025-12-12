@@ -1,10 +1,37 @@
 # SFGame Free Gift Claimer
 
-Automated script to claim daily free gifts from the SFGame shop for multiple characters.
+Automated script to claim weekly free gifts from the SFGame shop for multiple characters.
+
+## Why Use This?
+
+The SFGame shop offers a **free mushroom every week** for each character. Manually claiming this for multiple characters is tedious and easy to forget.
+
+### Benefits
+
+| Benefit | Description |
+|---------|-------------|
+| **Set and Forget** | Runs automatically via GitHub Actions every Monday |
+| **Multi-Character** | Claim for all your characters in one run |
+| **Never Miss a Week** | Automated scheduling ensures you never forget |
+| **Support Creators** | Automatically applies your favorite creator code |
+| **Zero Cost** | Runs on GitHub Actions free tier |
+
+### Yearly Savings
+
+| Characters | Weekly Mushrooms | Yearly Mushrooms |
+|------------|------------------|------------------|
+| 1 | 1 | **52** |
+| 2 | 2 | **104** |
+| 3 | 3 | **156** |
+| 5 | 5 | **260** |
+| 10 | 10 | **520** |
+
+That's **52 free mushrooms per character per year** - completely automated!
 
 ## Features
 
 - Claim free gifts for multiple character IDs in a single run
+- Fresh browser session per character (reliable headless operation)
 - Automatic cookie consent handling
 - Creator code support
 - Cooldown detection (skips characters with gifts on cooldown)
@@ -39,7 +66,7 @@ playwright install chromium
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `CHARACTER_IDS` | Yes | Comma-separated list of character IDs (e.g., `"id1#123,id2#456,id3#789"`) |
-| `CREATOR_CODE` | No | Creator code to use during checkout (default: `Niisa`) |
+| `CREATOR_CODES` | No | Comma-separated creator codes - picks random one per claim (default: `SFTOOLS`) |
 
 ### Finding Your Character ID
 
@@ -56,17 +83,17 @@ Set environment variables and run:
 ```bash
 # Linux/macOS
 export CHARACTER_IDS="id1#123,id2#456"
-export CREATOR_CODE="YourCode"
+export CREATOR_CODES="Code1,Code2,Code3"
 python scripts/claimer.py
 
 # Windows (PowerShell)
 $env:CHARACTER_IDS="id1#123,id2#456"
-$env:CREATOR_CODE="YourCode"
+$env:CREATOR_CODES="Code1,Code2,Code3"
 python scripts/claimer.py
 
 # Windows (CMD)
 set CHARACTER_IDS=id1#123,id2#456
-set CREATOR_CODE=YourCode
+set CREATOR_CODES=Code1,Code2,Code3
 python scripts/claimer.py
 ```
 
@@ -81,7 +108,7 @@ Add the following secrets:
 | Secret Name | Value |
 |-------------|-------|
 | `CHARACTER_IDS` | Your comma-separated character IDs (e.g., `"id1#123,id2#456"`) |
-| `CREATOR_CODE` | Your creator code (optional) |
+| `CREATOR_CODES` | Comma-separated creator codes (optional, e.g., `"Code1,Code2"`) |
 
 ### 2. Create Workflow File
 
@@ -92,8 +119,8 @@ name: Claim Free Gifts
 
 on:
   schedule:
-    # Runs every day at 8:00 UTC
-    - cron: '0 8 * * *'
+    # Runs every Monday at 5:00 UTC
+    - cron: '0 5 * * 1'
   workflow_dispatch: # Allows manual trigger
 
 jobs:
@@ -118,7 +145,7 @@ jobs:
       - name: Run claimer
         env:
           CHARACTER_IDS: ${{ secrets.CHARACTER_IDS }}
-          CREATOR_CODE: ${{ secrets.CREATOR_CODE }}
+          CREATOR_CODES: ${{ secrets.CREATOR_CODES }}
         run: python scripts/claimer.py
 ```
 
@@ -143,29 +170,37 @@ To run manually:
 ============================================================
 [12:34:56] [INFO]    Started at 2025-12-12 12:34:56
 [12:34:56] [INFO]    Found 3 character(s) to process
-[12:34:56] [INFO]    Creator code: Niisa
-[12:34:56] [INFO]    Launching browser (headless mode)...
-[12:34:59] [SUCCESS] Shop page loaded
+[12:34:56] [INFO]    Creator codes: 2 configured
 
 ──────────────────────────────────────────────────
-  Character 1/3: abc123#521
+  Character 1/3
 ──────────────────────────────────────────────────
-[12:35:00] [STEP 1/5] Opening login modal...
-[12:35:01] [STEP 2/5] Entering character ID...
-[12:35:02] [STEP 3/5] Submitting login...
+[12:35:00] [STEP 1/5] Loading shop page...
+[12:35:02] [STEP 2/5] Opening login...
+[12:35:03] [STEP 3/5] Logging in...
 [12:35:05] [SUCCESS] Logged in successfully
-[12:35:05] [STEP 4/5] Checking free gift availability...
+[12:35:05] [STEP 4/5] Checking free gift...
 [12:35:06] [INFO]    Free gift available! Claiming...
-[12:35:12] [SUCCESS] Free gift claimed for abc123#521!
-[12:35:12] [STEP 5/5] Switching to next character...
+[12:35:08] [STEP 5/5] Completing checkout...
+[12:35:12] [SUCCESS] Free gift claimed!
+
+──────────────────────────────────────────────────
+  Character 2/3
+──────────────────────────────────────────────────
+[12:35:15] [STEP 1/5] Loading shop page...
+[12:35:17] [STEP 2/5] Opening login...
+[12:35:18] [STEP 3/5] Logging in...
+[12:35:20] [SUCCESS] Logged in successfully
+[12:35:20] [STEP 4/5] Checking free gift...
+[12:35:21] [SKIP]    Free gift is on cooldown, skipping...
 
 ============================================================
   Summary
 ============================================================
 [12:36:00] [INFO]    Total characters: 3
-[12:36:00] [INFO]    Processed:        3
 [12:36:00] [SUCCESS] Gifts claimed:    2
-[12:36:00] [WARNING] On cooldown:      1
+[12:36:00] [SKIP]    On cooldown:      1
+[12:36:00] [INFO]    Completed at 2025-12-12 12:36:00
 ```
 
 ## Troubleshooting
@@ -176,7 +211,7 @@ To run manually:
 - Make sure you've set the `CHARACTER_IDS` environment variable or GitHub secret
 
 **"Free gift is on cooldown"**
-- The free gift has a 3-day cooldown period per character
+- The free gift resets weekly
 - The script will automatically skip and continue with the next character
 
 **GitHub Actions fails with browser error**
