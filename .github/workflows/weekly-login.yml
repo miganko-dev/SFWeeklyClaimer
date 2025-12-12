@@ -1,0 +1,31 @@
+name: Weekly SFGame Login
+
+on:
+  schedule:
+    # Runs every Monday at 8:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: playwright install chromium
+
+      - name: Run login script
+        env:
+          CHARACTER_IDS: ${{ secrets.CHARACTER_IDS }}
+        run: python scripts/sfgame_login.py
