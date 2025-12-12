@@ -84,6 +84,7 @@ def process_character(playwright, character_id: str, creator_code: str, index: i
             page.locator("button[x-on\\:click\\.prevent='open = ! open'].h-5.absolute.right-0.top-1.w-full").click()
             page.wait_for_selector("#creatorcode", state="visible", timeout=5000)
 
+            log_info(f"Using creator code: {creator_code}")
             page.fill("#creatorcode", creator_code)
             page.locator("#btn-checkout").click()
             page.wait_for_timeout(3000)
