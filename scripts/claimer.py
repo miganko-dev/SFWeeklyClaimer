@@ -54,10 +54,9 @@ def fill_input(page: Page, selector: str, value: str, timeout: int = 10000):
 
 
 def close_all_modals(page: Page):
-    page.keyboard.press("Escape")
-    page.wait_for_timeout(500)
-    page.keyboard.press("Escape")
-    page.wait_for_timeout(500)
+    page.evaluate("if(typeof closeLogin === 'function') closeLogin();")
+    page.evaluate("if(window.Alpine && Alpine.store('userOpen')) Alpine.store('userOpen').on = false;")
+    page.wait_for_timeout(1000)
 
 
 def open_login_modal(page: Page):
@@ -65,7 +64,7 @@ def open_login_modal(page: Page):
     page.wait_for_timeout(500)
     login_btn = page.locator("button.btn-login:has(.icon-user):not(.btn-playnow)")
     login_btn.wait_for(state="visible", timeout=10000)
-    login_btn.click()
+    page.evaluate("if(typeof openLogin === 'function') openLogin();")
     page.wait_for_timeout(1000)
     page.wait_for_selector("#characterid", state="visible", timeout=10000)
 
