@@ -1,13 +1,12 @@
-name: Weekly SFGame Login
+name: Claim Free Gifts
 
 on:
   schedule:
-    # Runs every Monday at 8:00 UTC
-    - cron: '0 8 * * 1'
-  workflow_dispatch: # Allows manual trigger
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
 
 jobs:
-  login:
+  claim:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,12 +19,13 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install playwright
+          playwright install chromium
+          playwright install-deps chromium
 
-      - name: Install Playwright browsers
-        run: playwright install chromium
-
-      - name: Run login script
+      - name: Run claimer
         env:
           CHARACTER_IDS: ${{ secrets.CHARACTER_IDS }}
-        run: python scripts/sfgame_login.py
+          CREATOR_CODE: ${{ secrets.CREATOR_CODE }}
+        run: python scripts/claimer.py
