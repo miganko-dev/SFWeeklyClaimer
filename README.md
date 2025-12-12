@@ -176,7 +176,7 @@ To run manually:
 - Make sure you've set the `CHARACTER_IDS` environment variable or GitHub secret
 
 **"Free gift is on cooldown"**
-- The free gift has a 3-day cooldown period per character
+- The free gift has a 7-day cooldown period per character
 - The script will automatically skip and continue with the next character
 
 **GitHub Actions fails with browser error**
