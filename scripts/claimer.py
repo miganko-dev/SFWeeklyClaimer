@@ -28,12 +28,12 @@ def log_success(message: str):
 
 def log_warning(message: str):
     timestamp = datetime.now().strftime("%H:%M:%S")
-    print(f"[{timestamp}] [WARNING] {message}")
+    print(f"[{timestamp}] [SKIP]    {message}")
 
 
 def log_error(message: str):
     timestamp = datetime.now().strftime("%H:%M:%S")
-    print(f"[{timestamp}] [ERROR]   {message}")
+    print(f"[{timestamp}] [FAIL]    {message}")
 
 
 def log_step(step: int, total: int, message: str):
@@ -41,30 +41,33 @@ def log_step(step: int, total: int, message: str):
     print(f"[{timestamp}] [STEP {step}/{total}] {message}")
 
 
-def click_element(page: Page, selector: str, wait_time: int = 1000, exact: bool = True):
-    element = page.get_by_role("button", name=selector, exact=exact)
-    element.wait_for(state="visible")
-    page.wait_for_timeout(wait_time)
-    element.click()
-
-
-def click_element_by_selector(page: Page, selector: str, wait_time: int = 1000):
+def click_element_by_selector(page: Page, selector: str, wait_time: int = 1000, timeout: int = 10000):
     element = page.locator(selector)
-    element.wait_for(state="visible")
+    element.wait_for(state="visible", timeout=timeout)
     page.wait_for_timeout(wait_time)
     element.click()
 
 
-def fill_input(page: Page, selector: str, value: str):
-    page.wait_for_selector(selector, state="visible")
+def fill_input(page: Page, selector: str, value: str, timeout: int = 10000):
+    page.wait_for_selector(selector, state="visible", timeout=timeout)
     page.fill(selector, value.strip())
 
 
-def close_modal_overlay(page: Page):
-    overlay = page.locator("#user-menu a.absolute.bg-black\\/\\[\\.25\\]")
-    if overlay.count() > 0 and overlay.is_visible():
-        overlay.click()
-        page.wait_for_timeout(500)
+def close_all_modals(page: Page):
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
+
+
+def open_login_modal(page: Page):
+    close_all_modals(page)
+    page.wait_for_timeout(500)
+    login_btn = page.locator("button.btn-login:has(.icon-user):not(.btn-playnow)")
+    login_btn.wait_for(state="visible", timeout=10000)
+    login_btn.click()
+    page.wait_for_timeout(1000)
+    page.wait_for_selector("#characterid", state="visible", timeout=10000)
 
 
 def claim_free_gifts():
@@ -98,6 +101,7 @@ def claim_free_gifts():
             log_info("Navigating to SFGame shop...")
             page.goto("https://home.sfgame.net/en/shop/")
             page.wait_for_load_state("networkidle")
+            page.wait_for_timeout(2000)
             log_success("Shop page loaded")
 
             log_info("Checking for cookie banner...")
@@ -110,16 +114,12 @@ def claim_free_gifts():
             else:
                 log_info("No cookie banner found")
 
-            needs_login_click = True
-
             for index, character_id in enumerate(character_ids):
                 log_section(f"Character {index + 1}/{len(character_ids)}")
 
                 try:
-                    if needs_login_click:
-                        log_step(1, 5, "Opening login modal...")
-                        click_element_by_selector(page, "button.btn-login:has(.icon-user):not(.btn-playnow)")
-                        needs_login_click = False
+                    log_step(1, 5, "Opening login modal...")
+                    open_login_modal(page)
 
                     log_step(2, 5, "Entering character ID...")
                     fill_input(page, "#characterid", character_id)
@@ -158,8 +158,7 @@ def claim_free_gifts():
 
                     if index < len(character_ids) - 1:
                         log_step(5, 5, "Switching to next character...")
-
-                        close_modal_overlay(page)
+                        close_all_modals(page)
 
                         click_element_by_selector(page, "button.btn-login:has(.icon-user):not(.btn-playnow)")
                         page.wait_for_timeout(1000)
@@ -177,7 +176,7 @@ def claim_free_gifts():
                         try:
                             page.goto("https://home.sfgame.net/en/shop/")
                             page.wait_for_load_state("networkidle")
-                            needs_login_click = True
+                            page.wait_for_timeout(2000)
                         except:
                             pass
 
