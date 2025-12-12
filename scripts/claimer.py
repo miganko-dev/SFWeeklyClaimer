@@ -59,11 +59,13 @@ def close_all_modals(page: Page):
     page.wait_for_timeout(1000)
 
 
-def open_login_modal(page: Page):
+def ensure_login_input_visible(page: Page):
+    char_input = page.locator("#characterid")
+    if char_input.is_visible():
+        return
+
     close_all_modals(page)
     page.wait_for_timeout(500)
-    login_btn = page.locator("button.btn-login:has(.icon-user):not(.btn-playnow)")
-    login_btn.wait_for(state="visible", timeout=10000)
     page.evaluate("if(typeof openLogin === 'function') openLogin();")
     page.wait_for_timeout(1000)
     page.wait_for_selector("#characterid", state="visible", timeout=10000)
@@ -118,7 +120,7 @@ def claim_free_gifts():
 
                 try:
                     log_step(1, 5, "Opening login modal...")
-                    open_login_modal(page)
+                    ensure_login_input_visible(page)
 
                     log_step(2, 5, "Entering character ID...")
                     fill_input(page, "#characterid", character_id)
@@ -159,11 +161,15 @@ def claim_free_gifts():
                         log_step(5, 5, "Switching to next character...")
                         close_all_modals(page)
 
-                        click_element_by_selector(page, "button.btn-login:has(.icon-user):not(.btn-playnow)")
+                        page.evaluate("if(typeof openLogin === 'function') openLogin();")
                         page.wait_for_timeout(1000)
 
-                        click_element_by_selector(page, "button.btnChangeCharacterId")
-                        page.wait_for_timeout(1000)
+                        change_btn = page.locator("button.btnChangeCharacterId")
+                        if change_btn.count() > 0 and change_btn.is_visible():
+                            change_btn.click()
+                            page.wait_for_timeout(1000)
+
+                        page.wait_for_selector("#characterid", state="visible", timeout=10000)
                         log_info("Ready for next character")
 
                 except Exception as e:
