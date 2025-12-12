@@ -60,6 +60,13 @@ def fill_input(page: Page, selector: str, value: str):
     page.fill(selector, value.strip())
 
 
+def close_modal_overlay(page: Page):
+    overlay = page.locator("#user-menu a.absolute.bg-black\\/\\[\\.25\\]")
+    if overlay.count() > 0 and overlay.is_visible():
+        overlay.click()
+        page.wait_for_timeout(500)
+
+
 def claim_free_gifts():
     log_header("SFGame Free Gift Claimer")
     log_info(f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -71,7 +78,7 @@ def claim_free_gifts():
         log_error("CHARACTER_IDS environment variable is not set")
         sys.exit(1)
 
-    character_ids = [cid.strip() for cid in character_ids_str.split(",") if cid.strip()]
+    character_ids = [cid.strip().strip('"').strip("'") for cid in character_ids_str.split(",") if cid.strip()]
 
     if not character_ids:
         log_error("No character IDs found in CHARACTER_IDS")
@@ -103,13 +110,16 @@ def claim_free_gifts():
             else:
                 log_info("No cookie banner found")
 
+            needs_login_click = True
+
             for index, character_id in enumerate(character_ids):
-                log_section(f"Character {index + 1}/{len(character_ids)}: {character_id}")
+                log_section(f"Character {index + 1}/{len(character_ids)}")
 
                 try:
-                    if index == 0:
+                    if needs_login_click:
                         log_step(1, 5, "Opening login modal...")
                         click_element_by_selector(page, "button.btn-login:has(.icon-user):not(.btn-playnow)")
+                        needs_login_click = False
 
                     log_step(2, 5, "Entering character ID...")
                     fill_input(page, "#characterid", character_id)
@@ -138,7 +148,7 @@ def claim_free_gifts():
                         click_element_by_selector(page, "#btn-checkout")
                         page.wait_for_timeout(3000)
 
-                        log_success(f"Free gift claimed for {character_id}!")
+                        log_success("Free gift claimed!")
                         stats["claimed"] += 1
                     else:
                         log_warning("Free gift is on cooldown, skipping...")
@@ -148,6 +158,9 @@ def claim_free_gifts():
 
                     if index < len(character_ids) - 1:
                         log_step(5, 5, "Switching to next character...")
+
+                        close_modal_overlay(page)
+
                         click_element_by_selector(page, "button.btn-login:has(.icon-user):not(.btn-playnow)")
                         page.wait_for_timeout(1000)
 
@@ -156,7 +169,7 @@ def claim_free_gifts():
                         log_info("Ready for next character")
 
                 except Exception as e:
-                    log_error(f"Failed to process {character_id}: {e}")
+                    log_error(f"Failed to process character: {e}")
                     stats["errors"] += 1
 
                     if index < len(character_ids) - 1:
@@ -164,6 +177,7 @@ def claim_free_gifts():
                         try:
                             page.goto("https://home.sfgame.net/en/shop/")
                             page.wait_for_load_state("networkidle")
+                            needs_login_click = True
                         except:
                             pass
 
