@@ -17,15 +17,6 @@ The SFGame shop offers a **free mushroom every week** for each character. Manual
 | **Zero Cost** | Runs on GitHub Actions free tier |
 
 ### Yearly Savings
-
-| Characters | Weekly Mushrooms | Yearly Mushrooms |
-|------------|------------------|------------------|
-| 1 | 1 | **52** |
-| 2 | 2 | **104** |
-| 3 | 3 | **156** |
-| 5 | 5 | **260** |
-| 10 | 10 | **520** |
-
 That's **52 free mushrooms per character per year** - completely automated!
 
 ## Features
