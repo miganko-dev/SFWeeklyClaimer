@@ -154,7 +154,7 @@ To run manually:
   SFGame Free Gift Claimer
 ============================================================
 [12:34:56] [INFO]    Started at 2025-12-12 12:34:56
-[12:34:56] [INFO]    Found 3 character(s) to process
+[12:34:56] [INFO]    Found 2 character(s) to process
 [12:34:56] [INFO]    Creator codes: 2 configured
 
 ──────────────────────────────────────────────────
@@ -170,7 +170,7 @@ To run manually:
 [12:35:12] [SUCCESS] Free gift claimed!
 
 ──────────────────────────────────────────────────
-  Character 2/3
+  Character 3/3
 ──────────────────────────────────────────────────
 [12:35:15] [STEP 1/5] Loading shop page...
 [12:35:17] [STEP 2/5] Opening login...
@@ -182,8 +182,8 @@ To run manually:
 ============================================================
   Summary
 ============================================================
-[12:36:00] [INFO]    Total characters: 3
-[12:36:00] [SUCCESS] Gifts claimed:    2
+[12:36:00] [INFO]    Total characters: 2
+[12:36:00] [SUCCESS] Gifts claimed:    1
 [12:36:00] [SKIP]    On cooldown:      1
 [12:36:00] [INFO]    Completed at 2025-12-12 12:36:00
 ```
