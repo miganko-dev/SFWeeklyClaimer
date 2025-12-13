@@ -43,8 +43,8 @@ Add the following secrets:
 #### Example
 
 ```text
-CHARACTER_IDS=id1#123,id2#456,id3#789
-CREATOR_CODES=Code1,Code2
+CHARACTER_IDS="id1#123,id2#456,id3#789"
+CREATOR_CODES="Code1,Code2"
 ```
 
 ---
