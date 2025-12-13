@@ -158,7 +158,7 @@ To run manually:
 [12:34:56] [INFO]    Creator codes: 2 configured
 
 ──────────────────────────────────────────────────
-  Character 1/3
+  Character 1/2
 ──────────────────────────────────────────────────
 [12:35:00] [STEP 1/5] Loading shop page...
 [12:35:02] [STEP 2/5] Opening login...
@@ -170,7 +170,7 @@ To run manually:
 [12:35:12] [SUCCESS] Free gift claimed!
 
 ──────────────────────────────────────────────────
-  Character 3/3
+  Character 2/2
 ──────────────────────────────────────────────────
 [12:35:15] [STEP 1/5] Loading shop page...
 [12:35:17] [STEP 2/5] Opening login...
