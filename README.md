@@ -37,12 +37,6 @@ That's **52 free mushrooms per character per year** - completely automated!
 ## Installation
 
 ### 1. Clone the repository
-
-```bash
-git clone https://github.com/yourusername/ShakesAndFidget.git
-cd ShakesAndFidget
-```
-
 ### 2. Install dependencies
 
 ```bash
