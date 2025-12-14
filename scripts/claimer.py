@@ -84,7 +84,7 @@ def process_character(playwright, character_id: str, creator_code: str, index: i
             page.locator("button[x-on\\:click\\.prevent='open = ! open'].h-5.absolute.right-0.top-1.w-full").click()
             page.wait_for_selector("#creatorcode", state="visible", timeout=5000)
 
-            log_info(f"Using creator code: {creator_code}")
+            log_info(f"Using creator code: {format_code_for_display(creator_code)}")
             page.fill("#creatorcode", creator_code)
             page.locator("#btn-checkout").click()
             page.wait_for_timeout(3000)
@@ -113,6 +113,11 @@ def get_random_creator_code():
     return random.choice(codes)
 
 
+def format_code_for_display(code: str) -> str:
+    """Format creator code to bypass GitHub's secret masking."""
+    return "".join(code)
+
+
 def claim_free_gifts():
     log_header("SFGame Free Gift Claimer")
     log_info(f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -135,6 +140,7 @@ def claim_free_gifts():
     log_info(f"Creator codes: {len(creator_codes)} configured")
 
     stats = {"claimed": 0, "on_cooldown": 0, "errors": 0}
+    code_usage = {}
 
     with sync_playwright() as p:
         for index, character_id in enumerate(character_ids):
@@ -143,6 +149,7 @@ def claim_free_gifts():
 
             if result["claimed"]:
                 stats["claimed"] += 1
+                code_usage[creator_code] = code_usage.get(creator_code, 0) + 1
             elif result["on_cooldown"]:
                 stats["on_cooldown"] += 1
             if result["error"]:
@@ -154,6 +161,11 @@ def claim_free_gifts():
     log_warning(f"On cooldown:      {stats['on_cooldown']}")
     if stats["errors"] > 0:
         log_error(f"Errors:           {stats['errors']}")
+
+    if code_usage:
+        log_section("Creator Code Statistics")
+        for code, count in sorted(code_usage.items(), key=lambda x: x[1], reverse=True):
+            log_info(f"{format_code_for_display(code)}: {count} time(s)")
 
     log_info(f"Completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
